@@ -1,0 +1,126 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  FLAGGED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      UserRole   @default(USER)
+  status    UserStatus @default(ACTIVE)
+  isDeleted Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  reviews   Review[]
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  status    CategoryStatus @default(ACTIVE)
+  isDeleted Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  stock       Int
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+  status      ProductStatus @default(ACTIVE)
+  isDeleted   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  reviews     Review[]
+  orders      Order[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Review {
+  id        String       @id @default(uuid())
+  rating    Int
+  comment   String
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  productId String
+  product   Product      @relation(fields: [productId], references: [id])
+  status    ReviewStatus @default(PENDING)
+  isDeleted Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@map("reviews")
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  quantity   Int
+  totalPrice Float
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id])
+  status     OrderStatus @default(PENDING)
+  isDeleted  Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@map("orders")
+}
